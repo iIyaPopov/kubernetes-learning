@@ -1,0 +1,81 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: flatnotes
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: admin-role
+  namespace: flatnotes
+rules:
+- apiGroups: ["*"]
+  resources: ["*"]
+  verbs: ["*"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: admin-binding
+  namespace: flatnotes
+subjects:
+- kind: User
+  name: flatnotes-admin
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: Role
+  name: admin-role
+  apiGroup: rbac.authorization.k8s.io
+
+#######################################################
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: flatnotes-conf
+  namespace: flatnotes
+data:
+  PUID: "1000"
+  PGID: "1000"
+  FLATNOTES_AUTH_TYPE: "password"
+  FLATNOTES_USERNAME: "username"
+  FLATNOTES_PASSWORD: "password"
+  FLATNOTES_SECRET_KEY: "LongRandomSeriesOfCharacters"
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: flatnotes
+  namespace: flatnotes
+  labels:
+    appName: flatnotes
+spec:
+  containers:
+  - name: flatnotes
+    image: dullage/flatnotes:latest
+    envFrom:
+      - configMapRef:
+          name: flatnotes-conf
+    ports:
+    - containerPort: 8080
+      name: http
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: flatnotes-nodeport-service
+  namespace: flatnotes
+spec:
+  type: NodePort
+  selector:
+    appName: flatnotes
+  ports:
+  - port: 8080
+    targetPort: http
+    nodePort: 30080

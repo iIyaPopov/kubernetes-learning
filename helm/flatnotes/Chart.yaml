@@ -1,0 +1,9 @@
+apiVersion: v2
+name: flatnotes
+description: Chart for testing
+
+# Версия Chart'a
+version: "0.1.2"
+
+# Версия приложения (https://hub.docker.com/r/dullage/flatnotes/tags)
+appVersion: "5.5.1"

@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: gitea-loadbalancer
+  namespace: gitea
+spec:
+  type: LoadBalancer
+  selector:
+    app.kubernetes.io/instance: gitea # <--- Узнать из команды выше
+    app.kubernetes.io/name: gitea # <--- Узнать из команды выше
+  ports:
+  - protocol: TCP
+    port: 3000
+    targetPort: 3000 # Порт тоже нужно узнать (например, из документации)

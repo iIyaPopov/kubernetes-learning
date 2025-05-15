@@ -1,0 +1,56 @@
+---
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: nginx-rs
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      appName: nginx
+  template:
+    metadata:
+      labels:
+        appName: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:latest
+        ports:
+        - containerPort: 80
+ 
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 5    # Время ожидания перед выполнением первой проверки после запуска
+          periodSeconds: 5         # Частота (в секундах) выполнения проверки готовности
+          failureThreshold: 3       # Количество последовательных сбоев, необходимых для того, чтобы проверка считалась неудачной
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          failureThreshold: 3
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-rs-svc
+spec:
+  type: NodePort
+  selector:
+    appName: nginx
+  ports:
+  - port: 80
+    targetPort: 80
+    nodePort: 30080
+
+# Ждать 5-10 минут, чтобы поды начали пересоздаваться. и то, если только отключить две ноды.
+# Чтобы ускорить процесс: kubectl drain <node-name> --ignore-daemonsets
+# Чтобы восстановить ноду: kubectl uncordon <node-name>
+
+# Если изменить readinessProbe.httpGet.path на что-то несуществующее (например, /123), то страница не будет открываться. См. kubectl get pods -o wide
+# Если изменить livenessProbe.httpGet.path (например, /123), то контейнеры в подах будут постоянно пересоздаваться (сначала примерно каждые periodSeconds * failureThreshold секунд, потом дольше). См. kubectl get pods -o wide и crictl ps на ноде, где запущен под.

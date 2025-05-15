@@ -1,0 +1,76 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ns-1
+
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ns-2
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx
+  namespace: ns-1
+  labels:
+    appType: proxy
+spec:
+  containers:
+  - name: nginx
+    image: nginx:stable
+    ports:
+    - containerPort: 80
+      name: http
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: caddy
+  namespace: ns-2
+  labels:
+    appType: proxy
+spec:
+  containers:
+  - name: caddy
+    image: caddy:alpine
+    ports:
+      - containerPort: 80
+        name: http
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: svc
+  namespace: ns-1  # В зависимости от namespace сервиса, будет открываться nginx (ns-1) или caddy (ns-2)
+spec:
+  type: NodePort # Можно использовать LoadBalancer
+  selector:
+    appType: proxy
+  ports:
+  - port: 80
+    targetPort: http
+    nodePort: 30800
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: svc
+  namespace: ns-2
+spec:
+  type: NodePort
+  selector:
+    appType: proxy
+  ports:
+  - port: 80
+    targetPort: http
+    nodePort: 30090  # Два сервиса на одном порту создать не получится
+
+# kubectl -n ns-1 get svc
+# kubectl get pods -n ns-2

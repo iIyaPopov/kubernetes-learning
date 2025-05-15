@@ -1,0 +1,120 @@
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-1
+spec:
+  capacity:
+    storage: 10Mi
+  accessModes:
+    - ReadWriteMany
+  nfs:
+    server: 192.168.0.1
+    path: /nfs/pv-1
+
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-2
+spec:
+  capacity:
+    storage: 20Mi
+  accessModes:
+    - ReadWriteMany
+  nfs:
+    server: 192.168.0.1
+    path: /nfs/pv-2
+
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-3
+spec:
+  capacity:
+    storage: 30Mi
+  accessModes:
+    - ReadWriteMany
+  nfs:
+    server: 192.168.0.1
+    path: /nfs/pv-3
+
+
+
+#################################################
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pvc
+spec:
+  accessModes:
+    - ReadWriteMany 
+  resources:
+    requests:
+      storage: 10Mi # сначала 10Mi и создать файл, потом 15Mi (файла не будет)
+  storageClassName: ""
+
+
+
+#################################################
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: flatnotes-conf
+data:
+  PUID: "1000"
+  PGID: "1000"
+  FLATNOTES_AUTH_TYPE: "password"
+  FLATNOTES_USERNAME: "username"
+  FLATNOTES_PASSWORD: "password"
+  FLATNOTES_SECRET_KEY: "LongRandomSeriesOfCharacters"
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: flatnotes-pod
+  labels:
+    appName: flatnotes
+spec:
+  containers:
+    - name: flatnotes
+      image: dullage/flatnotes:latest
+      envFrom:
+        - configMapRef:
+            name: flatnotes-conf
+      ports:
+        - containerPort: 8080
+      volumeMounts: 
+        - mountPath: /data
+          name: nfs-storage
+  volumes:
+    - name: nfs-storage
+      persistentVolumeClaim:
+        claimName: pvc
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: flatnotes-nodeport-service
+spec:
+  type: NodePort
+  selector:
+    appName: flatnotes
+  ports:
+    - port: 8080
+      targetPort: 8080
+      nodePort: 30080
+
+# nano /etc/exports
+# /nfs/pv-1  192.168.0.0/24(rw,sync,no_subtree_check,no_root_squash)
+# /nfs/pv-2  192.168.0.0/24(rw,sync,no_subtree_check,no_root_squash)
+# /nfs/pv-3  192.168.0.0/24(rw,sync,no_subtree_check,no_root_squash)
+# exportfs -a
+# kubectl get pv

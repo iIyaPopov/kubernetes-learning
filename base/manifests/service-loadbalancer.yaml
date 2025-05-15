@@ -1,0 +1,50 @@
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx
+  labels:
+    appType: proxy
+spec:
+  containers:
+  - name: nginx
+    image: nginx:stable
+    ports:
+    - containerPort: 80
+      name: http
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: caddy
+  labels:
+    appType: proxy
+spec:
+  containers:
+  - name: nginx
+    image: caddy:alpine
+    ports:
+    - containerPort: 80
+      name: http
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: lb-service
+spec:
+  type: LoadBalancer
+  selector:
+    appType: proxy
+  ports:
+  - protocol: TCP
+    
+    # Нельзя в k3s использовать порты 80 и 443, т.к. они уже заняты другим приложением (traefik)
+    # https://jaehong21.com/posts/k3s/04-service-lb/
+    port: 8080
+    targetPort: http
+#status:
+#  loadBalancer:
+#    ingress:
+#    - ip: 192.168.250.240

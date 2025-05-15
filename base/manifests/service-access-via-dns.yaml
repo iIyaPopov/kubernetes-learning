@@ -1,0 +1,49 @@
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx
+  labels:
+    app: nginx
+spec:
+  containers:
+  - name: nginx
+    image: nginx:stable
+    ports:
+    - containerPort: 80
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: netshoot
+  labels:
+    app: netshoot
+spec:
+  containers:
+  - name: netshoot
+    image: nicolaka/netshoot # альтернатива - dnsutils
+    command: ["sleep", "3600"] # контейнер будет работать в режиме ожидания 3600 секунд (1 час)
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx
+spec:
+  selector:
+    app: nginx
+  ports:
+  - protocol: TCP
+    port: 8080
+    targetPort: 80
+
+
+# kubectl exec nginx -it -- /bin/bash -c "echo "nginx" > /usr/share/nginx/html/index.html"
+
+# kubectl exec netshoot -it -- ping 10.42.6.143
+# kubectl exec netshoot -it -- curl 10.43.66.147:8080
+# kubectl exec netshoot -it -- curl <nginx-service-name>:8080
+
+# kubectl get svc nginx -o yaml
+# kubectl get svc nginx -o jsonpath='{.spec.clusterIP}'; echo

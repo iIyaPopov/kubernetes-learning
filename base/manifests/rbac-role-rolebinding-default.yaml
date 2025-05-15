@@ -1,0 +1,27 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: pods-reader-role
+  namespace: default
+rules:
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get", "list"]
+  # get: kubectl get pod <pod-name>
+  # list: kubectl get pods
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: pods-reader-binding
+  namespace: default
+subjects:
+- kind: User
+  name: flatnotes-admin # kubectl config get-users
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: Role
+  name: pods-reader-role
+  apiGroup: rbac.authorization.k8s.io

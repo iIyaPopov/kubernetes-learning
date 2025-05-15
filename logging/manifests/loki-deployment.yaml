@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: loki
+  namespace: logging
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: loki
+  template:
+    metadata:
+      name: loki
+      namespace: logging
+      labels:
+        app: loki
+    spec:
+      containers:
+        - name: loki
+          image: grafana/loki
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3100

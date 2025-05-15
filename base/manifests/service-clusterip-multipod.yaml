@@ -1,0 +1,52 @@
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-1
+  labels:
+    appName: nginx
+spec:
+  containers:
+  - name: nginx
+    image: nginx:stable
+    ports:
+    - containerPort: 80
+      name: http-port
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-2
+  labels:
+    appName: nginx
+spec:
+  containers:
+  - name: nginx
+    image: nginx:stable
+    ports:
+    - containerPort: 80
+      name: http-port
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cluster-ip-service
+spec:
+  selector:
+    appName: nginx
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: http-port
+
+
+# kubectl exec nginx -it -- /bin/bash
+# kubectl exec nginx-1 -it -- /bin/bash -c "echo "nginx-1" > /usr/share/nginx/html/index.html"
+# kubectl exec nginx-2 -it -- /bin/bash -c "echo "nginx-2" > /usr/share/nginx/html/index.html"
+
+# curl <nginx-1-ip> # всегда один результат
+# curl <nginx-2-ip> # всегда один результат
+# curl <cluster-ip-service-ip> # результат будет разным
+

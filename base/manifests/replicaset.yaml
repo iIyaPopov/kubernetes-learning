@@ -1,0 +1,44 @@
+---
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: nginx-rs
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      appName: nginx
+  template:
+    metadata:
+      labels:
+        appName: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:latest
+        ports:
+        - containerPort: 80
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-rs-svc
+spec:
+  type: NodePort
+  selector:
+    appName: nginx
+  ports:
+  - port: 80
+    targetPort: 80
+    nodePort: 30080
+
+# Выключить ноду. Ждать 5-10 минут, чтобы поды начали пересоздаваться
+
+# Every 2.0s: watch kubectl get pods -o wide                                                                                                                           k3s-server-1.netlab: Thu May  1 09:20:59 2025
+
+# NAME             READY   STATUS        RESTARTS   AGE     IP           NODE                  NOMINATED NODE   READINESS GATES
+# nginx-rs-7dxmm   1/1     Running       0          33s     10.42.6.22   k3s-agent-3.netlab    <none>           <none>
+# nginx-rs-kkt69   1/1     Running       0          3h31m   10.42.3.25   k3s-server-3.netlab   <none>           <none>
+# nginx-rs-wvk7f   1/1     Terminating   0          3h33m   10.42.5.30   k3s-agent-2.netlab    <none>           <none>
+# nginx-rs-x7mpm   1/1     Running       0          3h28m   10.42.1.26   k3s-server-2.netlab   <none>           <none>

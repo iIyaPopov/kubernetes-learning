@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Release.Name }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}
+    spec:
+      containers:
+        - name: {{ .Release.Name }}
+          image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+          ports:
+            - containerPort: {{ .Values.service.port }}
+          volumeMounts: 
+            - mountPath: /data
+              name: {{ .Release.Name }}
+          envFrom:
+            - configMapRef:
+                name: {{ .Release.Name }}
+          env:
+            - name: FLATNOTES_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}
+                  key: username
+            - name: FLATNOTES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}
+                  key: password
+            - name: FLATNOTES_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}
+                  key: secret_key
+      volumes:
+        - name: {{ .Release.Name }}
+          nfs:
+            server: {{ .Values.nfs.server }}
+            path: {{ .Values.nfs.path }}
+            

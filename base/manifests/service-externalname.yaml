@@ -1,0 +1,26 @@
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: netshoot
+  labels:
+    appName: netshoot
+spec:
+  containers:
+  - name: netshoot
+    image: nicolaka/netshoot
+    command: ["sleep", "3600"]
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: google
+spec:
+  type: ExternalName
+  externalName: ya.ru
+
+# kubectl exec netshoot -it -- ping google
+# PING ya.ru (5.255.255.242) 56(84) bytes of data.
+# 64 bytes from ya.ru (5.255.255.242): icmp_seq=1 ttl=244 time=12.5 ms
+# ...

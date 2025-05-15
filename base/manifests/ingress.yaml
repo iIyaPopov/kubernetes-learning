@@ -1,0 +1,96 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ns
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx
+  namespace: ns
+  labels:
+    appName: nginx
+    appType: proxy
+spec:
+  containers:
+  - name: nginx
+    image: nginx:stable
+    ports:
+    - containerPort: 80
+      name: http
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: caddy
+  namespace: ns
+  labels:
+    appName: caddy
+    appType: proxy
+spec:
+  containers:
+  - name: caddy
+    image: caddy:alpine
+    ports:
+      - containerPort: 80
+        name: http
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-svc
+  namespace: ns
+spec:
+  type: ClusterIP
+  selector:
+    appName: nginx
+  ports:
+  - port: 80
+    targetPort: http
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: caddy-svc
+  namespace: ns
+spec:
+  type: ClusterIP
+  selector:
+    appName: caddy
+  ports:
+  - port: 80
+    targetPort: http
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: proxy-ingress
+  namespace: ns
+spec:
+  rules:
+  - host: nginx.proxy.ns # в /etc/hosts создать запись
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: nginx-svc
+            port:
+              number: 80
+  - host: caddy.proxy.ns # в /etc/hosts создать запись
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: caddy-svc
+            port:
+              number: 80

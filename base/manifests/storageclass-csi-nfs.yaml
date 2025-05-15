@@ -1,0 +1,101 @@
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: nfs-csi # -----> (1)
+provisioner: nfs.csi.k8s.io
+parameters:
+  server: 192.168.0.1
+  share: /nfs/csi
+reclaimPolicy: Delete # Delete | Retain (не удалять)
+volumeBindingMode: Immediate # Immediate (сразу) | WaitForFirstConsumer (ожидание создание Pod)
+allowVolumeExpansion: false # true | false (разрешить/запретить расширение тома)
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nfs-pvc
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Mi
+  storageClassName: nfs-csi # <----- (1)
+
+
+
+#################################################
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: flatnotes-conf
+data:
+  PUID: "1000"
+  PGID: "1000"
+  FLATNOTES_AUTH_TYPE: "password"
+  FLATNOTES_USERNAME: "username"
+  FLATNOTES_PASSWORD: "password"
+  FLATNOTES_SECRET_KEY: "LongRandomSeriesOfCharacters"
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: flatnotes-pod
+  labels:
+    appName: flatnotes
+spec:
+  containers:
+  - name: flatnotes
+    image: dullage/flatnotes:latest
+    envFrom:
+    - configMapRef:
+        name: flatnotes-conf
+    ports:
+    - containerPort: 8080
+    volumeMounts: 
+    - mountPath: /data
+      name: nfs-storage
+  volumes:
+    - name: nfs-storage
+      persistentVolumeClaim:
+        claimName: nfs-pvc
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: flatnotes-nodeport-service
+spec:
+  type: NodePort
+  selector:
+    appName: flatnotes
+  ports:
+  - port: 8080
+    targetPort: 8080
+    nodePort: 30080
+
+
+
+# Инструкция: https://github.com/kubernetes-csi/csi-driver-nfs/blob/master/deploy/example/README.md
+# echo "/nfs/csi  192.168.0.0/24(rw,sync,no_subtree_check,no_root_squash)" > /etc/exports
+# exportfs -a
+# Применить yml, создать файлы в flatnotes
+# ls /nfs/csi/<pvc-name>
+# kubectl get pvc
+# kubectl get pv
+
+# Попробовать удалить PVC, проверить на NFS сервере наличие файлов
+# kubectl delete -f <filename>
+# ls /nfs/csi/ - PV будет удален при значении reclaimPolicy: Delete
+
+# Заменить на reclaimPolicy: Retain и повторить
+# kubectl get pv
+
+# Создать все заново
+# kubectl get pv
+# Будет создан новый PV

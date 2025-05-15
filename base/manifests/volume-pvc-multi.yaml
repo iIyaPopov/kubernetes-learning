@@ -1,0 +1,176 @@
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-1
+spec:
+  capacity:
+    storage: 10Mi
+  accessModes:
+    - ReadWriteMany
+  nfs:
+    server: 192.168.0.1
+    path: /nfs/pv-1
+
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-2
+spec:
+  capacity:
+    storage: 20Mi
+  accessModes:
+    - ReadWriteMany
+  nfs:
+    server: 192.168.0.1
+    path: /nfs/pv-2
+
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-3
+spec:
+  capacity:
+    storage: 30Mi
+  accessModes:
+    - ReadWriteMany
+  nfs:
+    server: 192.168.0.1
+    path: /nfs/pv-3
+
+
+
+#################################################
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pvc-1
+spec:
+  accessModes:
+    - ReadWriteMany 
+  resources:
+    requests:
+      storage: 10Mi
+  storageClassName: ""
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pvc-2
+spec:
+  accessModes:
+    - ReadWriteMany 
+  resources:
+    requests:
+      storage: 10Mi
+  storageClassName: ""
+
+
+
+#################################################
+
+---
+apiVersion: v1
+kind: ConfigMap # Один ConfigMap можно использовать в разных Pod
+metadata:
+  name: flatnotes-conf
+data:
+  PUID: "1000"
+  PGID: "1000"
+  FLATNOTES_AUTH_TYPE: "password"
+  FLATNOTES_USERNAME: "username"
+  FLATNOTES_PASSWORD: "password"
+  FLATNOTES_SECRET_KEY: "LongRandomSeriesOfCharacters"
+
+
+
+#################################################
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: flatnotes-pod-1
+  labels:
+    appName: flatnotes-1
+spec:
+  containers:
+    - name: flatnotes
+      image: dullage/flatnotes:latest
+      envFrom:
+        - configMapRef:
+            name: flatnotes-conf
+      ports:
+        - containerPort: 8080
+      volumeMounts: 
+        - mountPath: /data
+          name: nfs-storage
+  volumes:
+    - name: nfs-storage
+      persistentVolumeClaim:
+        claimName: pvc-1
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: flatnotes-nodeport-service-1
+spec:
+  type: NodePort
+  selector:
+    appName: flatnotes-1
+  ports:
+    - port: 8080
+      targetPort: 8080
+      nodePort: 30081
+
+
+
+#################################################
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: flatnotes-pod-2
+  labels:
+    appName: flatnotes-2
+spec:
+  containers:
+    - name: flatnotes-2
+      image: dullage/flatnotes:latest
+      envFrom:
+        - configMapRef:
+            name: flatnotes-conf
+      ports:
+        - containerPort: 8080
+      volumeMounts: 
+        - mountPath: /data
+          name: nfs-storage
+  volumes:
+    - name: nfs-storage
+      persistentVolumeClaim:
+        claimName: pvc-2
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: flatnotes-nodeport-service-2
+spec:
+  type: NodePort
+  selector:
+    appName: flatnotes-2
+  ports:
+    - port: 8080
+      targetPort: 8080
+      nodePort: 30082
+
+
+
+# Изменить в Service selector.appName=flatnotes. Поведение при обновлении страницы будет некорректное.

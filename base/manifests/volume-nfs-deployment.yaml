@@ -1,0 +1,56 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: flatnotes-conf
+data:
+  PUID: "1000"
+  PGID: "1000"
+  FLATNOTES_AUTH_TYPE: "password"
+  FLATNOTES_USERNAME: "username"
+  FLATNOTES_PASSWORD: "password"
+  FLATNOTES_SECRET_KEY: "LongRandomSeriesOfCharacters"
+
+---
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: flatnotes-pod
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      appName: flatnotes
+  template:
+    metadata:
+      labels:
+        appName: flatnotes
+    spec:
+      containers:
+      - name: flatnotes
+        image: dullage/flatnotes:latest
+        envFrom:
+        - configMapRef:
+            name: flatnotes-conf
+        volumeMounts: 
+        - mountPath: /data # https://github.com/dullage/flatnotes?tab=readme-ov-file#self-hosted
+          name: nfs-volume
+      volumes:
+      - name: nfs-volume
+        nfs:
+          server: 192.168.0.1
+          path: /nfs/flatnotes
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: flatnotes-nodeport-service
+spec:
+  type: NodePort
+  selector:
+    appName: flatnotes
+  ports:
+  - port: 8080
+    targetPort: 8080
+    nodePort: 30080

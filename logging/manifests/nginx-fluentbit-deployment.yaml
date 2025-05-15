@@ -1,0 +1,72 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-fluentbit
+  namespace: logging
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      name: nginx-fluentbit
+      namespace: logging
+      labels:
+        app: nginx
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:stable
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: var-log-nginx
+              mountPath: /var/log/nginx/
+
+        - name: fluentbit
+          image: fluent/fluent-bit:4.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 2021
+          volumeMounts:
+            - name: fluentbit-etc
+              mountPath: /fluent-bit/etc/
+            - name: var-log-nginx
+              mountPath: /var/log/nginx/
+            - name: proc
+              mountPath: /host/proc
+              readOnly: true
+            - name: sys
+              mountPath: /host/sys
+              readOnly: true
+
+        - name: prometheus
+          image: prom/prometheus:v3.3.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 9090
+          volumeMounts:
+            - name: prometheus
+              mountPath: /etc/prometheus/
+
+      volumes:
+        - name: fluentbit-etc
+          configMap:
+            name: fluentbit
+        - name: var-log-nginx
+          nfs:
+            server: 192.168.0.1
+            path: /nfs/nginx-logs
+        - name: prometheus
+          configMap:
+            name: prometheus
+        - name: proc
+          hostPath:
+            path: /proc
+            type: Directory
+        - name: sys
+          hostPath:
+            path: /sys
+            type: Directory
