@@ -61,6 +61,28 @@ data:
         relabel_configs:
           - source_labels: [__meta_kubernetes_pod_node_name]
             target_label: instance
+    
+    rule_files:
+      - rules.yml
+    
+    alerting:
+      alertmanagers:
+        - static_configs:
+            - targets: ['alertmanager:9093']
+  
+  rules.yml: |
+    groups:
+      - name: CPU
+        rules:
+          - alert: "CPU usage > 100%"
+            expr: node_load1 > 1
+            for: 10s
+            labels:
+              severity: warning
+            annotations:
+              summary: "High CPU usage (>100%) detected on node {{ $labels.instance }}"
+              description: "CPU usage is above 100% for more than 1 minutes on node {{ $labels.instance }}."
+
 ---
 apiVersion: apps/v1
 kind: Deployment

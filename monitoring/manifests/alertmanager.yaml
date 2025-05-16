@@ -1,0 +1,103 @@
+# https://blog.yakunin.dev/promethues-%D0%BE%D0%BF%D0%BE%D0%B2%D0%B5%D1%89%D0%B5%D0%BD%D0%B8%D0%B5-%D1%87%D0%B5%D1%80%D0%B5%D0%B7-telegram/
+# https://selectel.ru/blog/tutorials/how-to-set-up-dbaas-monitoring-and-alerting-in-prometheus/
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: alertmanager
+  namespace: monitoring
+data:
+  alertmanager.yaml: |
+    global:
+      resolve_timeout: 10s
+
+    receivers:
+      - name: 'telegram_bot'
+        telegram_configs:
+          - bot_token: '<token>'
+            api_url: 'https://api.telegram.org'
+            chat_id: <chat_id>
+            parse_mode: 'HTML'
+            send_resolved: true # отправить уведомление, если проблема решилась
+            message: '{{ template "telegram_message" . }}'
+
+    route:
+      group_by: ['alertname']
+      group_wait: 3s
+      receiver: 'telegram_bot'
+    
+    templates:
+      - '/etc/alertmanager/alertmanger.tmpl'
+
+  # https://community.grafana.com/t/working-configuration-example-for-alerts-templating-telegram-and-slack/80988
+  # Про шаблоны: https://habr.com/ru/articles/792802/
+  alertmanger.tmpl: |
+    {{ define "telegram_message" }}
+      {{ if gt (len .Alerts.Firing) 0 }}
+      <b>🔥 {{ len .Alerts.Firing }} alert(s) firing:</b>
+        {{ range .Alerts.Firing }} {{ template "telegram_alert_firing" . }} {{ end }} {{ end }}
+      {{ if gt (len .Alerts.Resolved) 0 }}
+      <b>✅ {{ len .Alerts.Resolved }} alert(s) resolved:</b>
+        {{ range .Alerts.Resolved }} {{ template "telegram_alert_resolved" . }} {{ end }} {{ end }}
+    {{ end }}
+  
+    {{ define "telegram_alert_firing" }}
+      Severity: <b>{{ .Labels.severity }}</b>
+      <b>{{ .Labels.alertname }}</b>
+      Node: <b>{{ .Labels.instance }}</b>
+    {{ end }}
+
+    {{ define "telegram_alert_resolved" }}
+      <b>{{ .Labels.alertname }}</b>
+      Node: <b>{{ .Labels.instance }}</b>
+    {{ end }}
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: alertmanager
+  namespace: monitoring
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: alertmanager
+  template:
+    metadata:
+      name: alertmanager
+      namespace: monitoring
+      labels:
+        app: alertmanager
+    spec:
+      containers:
+        - name: alertmanager
+          image: quay.io/prometheus/alertmanager
+          imagePullPolicy: IfNotPresent
+          args:
+            - '--config.file=/etc/alertmanager/alertmanager.yaml'
+          ports:
+            - containerPort: 9093
+          volumeMounts:
+            - name: alertmanager
+              mountPath: /etc/alertmanager/
+      volumes:
+        - name: alertmanager
+          configMap:
+            name: alertmanager
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: alertmanager
+  namespace: monitoring
+spec:
+  type: NodePort
+  selector:
+    app: alertmanager
+  ports:
+    - port: 9093
+      targetPort: 9093
+      nodePort: 30093

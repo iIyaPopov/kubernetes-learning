@@ -1,0 +1,47 @@
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: stress-ng-1
+  namespace: monitoring
+spec:
+  template:
+    spec:
+      containers:
+        - name: stress-ng
+          image: polinux/stress-ng
+          command: ["/bin/bash", "-c", "stress-ng --cpu 2 --timeout 5m"]
+      restartPolicy: Never
+  backoffLimit: 1
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: stress-ng-2
+  namespace: monitoring
+spec:
+  template:
+    spec:
+      containers:
+        - name: stress-ng
+          image: polinux/stress-ng
+          command: ["/bin/bash", "-c", "stress-ng --cpu 2 --timeout 5m"]
+      restartPolicy: Never
+  backoffLimit: 1
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: stress-ng-3
+  namespace: monitoring
+spec:
+  template:
+    spec:
+      containers:
+        - name: stress-ng
+          image: polinux/stress-ng
+          command: ["/bin/bash", "-c", "stress-ng --cpu 2 --timeout 5m"]
+      restartPolicy: Never
+  backoffLimit: 1
