@@ -7,3 +7,5 @@
 [Grafana Docker Hub](https://hub.docker.com/r/grafana/grafana)
 
 Логин и пароль Grafana по умолчанию: `admin/admin`
+
+[Генератор логов](https://github.com/mingrammer/flog)
