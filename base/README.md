@@ -48,7 +48,7 @@ Server Version: v1.32.3+k3s1
 
 [Создание Pod с переменными среды без использования ConfigMap](manifests/env.yaml)
 
-[Создание Pod с переменными среды с использованием ConfigMap](manifests/env.yaml)
+[Создание Pod с переменными среды с использованием ConfigMap](manifests/env-configmap.yaml)
 
 [Создание Pod с секретами (логины, пароли, токены и т.п.)](manifests/secret.yaml)
 

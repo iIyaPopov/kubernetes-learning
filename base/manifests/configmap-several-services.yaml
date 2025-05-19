@@ -22,7 +22,7 @@ kind: Pod
 metadata:
   name: nginx-1
   labels:
-    appName: nginx
+    app: nginx
 spec:
   containers:
   - name: nginx
@@ -48,7 +48,7 @@ kind: Pod
 metadata:
   name: nginx-2
   labels:
-    appName: nginx
+    app: nginx
 spec:
   containers:
   - name: nginx
@@ -76,8 +76,55 @@ metadata:
 spec:
   type: NodePort
   selector:
-    appName: nginx
+    app: nginx
   ports:
   - port: 80
     targetPort: http-port
     nodePort: 30080
+
+# Воспроизвести данный пример, используя только один ConfigMap с двумя ключами.
+
+  # ---
+  # apiVersion: v1
+  # kind: ConfigMap
+  # metadata:
+  #   name: nginx
+  # data:
+  #   index-1.html: |
+  #     Hello from nginx-1!
+  #   index-2.html: |
+  #     Hello from nginx-2!
+
+# ---
+# apiVersion: v1
+# kind: Pod
+# metadata:
+#   name: nginx-1
+#   labels:
+#     appName: nginx
+# spec:
+#   ...
+#   volumes:
+#   - name: index
+#     configMap:
+#       name: nginx
+#       items:
+#       - key: index-1.html
+#         path: index.html
+
+# ---
+# apiVersion: v1
+# kind: Pod
+# metadata:
+#   name: nginx-2
+#   labels:
+#     appName: nginx
+# spec:
+#   ...
+#   volumes:
+#   - name: index
+#     configMap:
+#       name: nginx
+#       items:
+#       - key: index-2.html
+#         path: index.html
