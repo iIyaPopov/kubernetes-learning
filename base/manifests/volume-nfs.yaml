@@ -22,6 +22,7 @@ spec:
   containers:
   - name: flatnotes
     image: dullage/flatnotes:latest
+    imagePullPolicy: IfNotPresent
     envFrom:
     - configMapRef:
         name: flatnotes-conf
@@ -50,6 +51,6 @@ spec:
 
 # Установить сервер: apt install -y nfs-kernel-server
 # На все ноды установить: apt install -y nfs-common
-# mkdir -p /nfs/flatnotes
-# echo "/nfs/flatnotes  192.168.0.0/24(rw,sync,no_subtree_check,no_root_squash)" >> /etc/exports
-# exportfs -a
+# На сервере: mkdir -p /nfs/flatnotes
+# На сервере: echo "/nfs/flatnotes  192.168.0.0/24(rw,sync,no_subtree_check,no_root_squash)" >> /etc/exports
+# На сервере: exportfs -a

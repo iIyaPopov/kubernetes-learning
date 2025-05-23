@@ -18,10 +18,11 @@ spec:
       containers:
         - name: {{ .Release.Name }}
           image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+          imagePullPolicy: {{ .Values.image.imagePullPolicy }}
           ports:
             - containerPort: {{ .Values.service.port }}
           volumeMounts: 
-            - mountPath: /data
+            - mountPath: {{ .Values.flatnotes.dir }}
               name: {{ .Release.Name }}
           envFrom:
             - configMapRef:

@@ -3,12 +3,16 @@ replicaCount: 1
 image:
   repository: dullage/flatnotes
   tag: latest
+  imagePullPolicy: IfNotPresent
 
 service:
   type: NodePort
   port: 8080
   targetPort: 8080
   nodePort: 30080
+
+flatnotes:
+  dir: "/data"
 
 nfs:
   server: 192.168.0.1
